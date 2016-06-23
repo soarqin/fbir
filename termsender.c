@@ -33,6 +33,15 @@ void* connect_(const char* addr, uint16_t port) {
     return (void*)(uintptr_t)fd;
 }
 
+void close_(void* sender) {
+    int fd = (int)(uintptr_t)sender;
+#ifdef WIN32
+    closesocket(fd);
+#else
+    close(fd);
+#endif
+}
+
 int receive_(void* sender, char* buffer, int length) {
     int fd = (int)(uintptr_t)sender;
     int r = recv(fd, buffer, length, 0);
@@ -80,6 +89,7 @@ void error(const char* format, ...) {
 void termsender_register() {
     static sender_t s = {
         connect_,
+        close_,
         receive_,
         send_,
         info,

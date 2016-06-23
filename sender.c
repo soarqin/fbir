@@ -35,6 +35,8 @@ void sender_send_files(const char* addr, uint16_t port, int count, const char* f
         g_sender->error("Unable to connect to %s:%u.\n", addr, port);
         return;
     }
+    int cc = htonl(count);
+    g_sender->send(data, (const char*)&cc, 4);
     buffer = (char*)malloc(BUF_SIZE);
     for (i = 0; i < count; ++i) {
         const char* filename = files[i];
@@ -61,7 +63,7 @@ void sender_send_files(const char* addr, uint16_t port, int count, const char* f
             size_t r = fread(buffer, 1, BUF_SIZE, f);
             g_sender->send(data, buffer, r);
             total += r;
-            g_sender->info("\r  Progress:%10u/%u\n", (uint32_t)total, (uint32_t)size);
+            g_sender->info("\r  Progress:%10u/%u", (uint32_t)total, (uint32_t)size);
         }
         fclose(f);
         g_sender->info("\nSuccessfully sent %s.\n", filename);
