@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 
 #ifdef WIN32
@@ -73,18 +72,30 @@ int send_(void* sender, const char* buffer, int length) {
     return r;
 }
 
-void info(const char* format, ...) {
-    va_list ap;
-    va_start(ap, format);
-    vfprintf(stdout, format, ap);
-    va_end(ap);
+void progress_(size_t curr, size_t total) {
+    fprintf(stdout, "\r  Progress:%10lu/%lu", curr, total);
 }
 
-void error(const char* format, ...) {
-    va_list ap;
-    va_start(ap, format);
-    vfprintf(stderr, format, ap);
-    va_end(ap);
+void event_(sender_event_t event, const char* sparam, int iparam) {
+    switch(event) {
+        case sender_connfail:
+            fprintf(stderr, "Unable to connect to %s:%d.\n", sparam, iparam);
+            break;
+        case sender_connlost:
+            fprintf(stderr, "Connection closed by remote.\n");
+            break;
+        case sender_filemissing:
+            fprintf(stderr, "File %s does not exist.\n", sparam);
+            break;
+        case sender_sending:
+            fprintf(stdout, "Sending %s...\n", sparam);
+            break;
+        case sender_sent:
+            fprintf(stdout, "\nSuccessfully sent %s.\n", sparam);
+            break;
+        default:
+            break;
+    }
 }
 
 void termsender_register() {
@@ -93,8 +104,8 @@ void termsender_register() {
         close_,
         receive_,
         send_,
-        info,
-        error
+        progress_,
+        event_
     };
     register_sender(&s);
 }

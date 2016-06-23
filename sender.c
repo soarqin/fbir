@@ -32,7 +32,7 @@ void sender_send_files(const char* addr, uint16_t port, int count, const char* f
     char* buffer;
     void* data = g_sender->connect(addr, port);
     if (data == NULL) {
-        g_sender->error("Unable to connect to %s:%u.\n", addr, port);
+        g_sender->event(sender_connfail, addr, port);
         return;
     }
     int cc = htonl(count);
@@ -43,11 +43,11 @@ void sender_send_files(const char* addr, uint16_t port, int count, const char* f
         FILE* f = fopen(filename, "rb");
         uint8_t token;
         if (f == NULL) {
-            g_sender->error("File %s does not exist.\n", filename);
+            g_sender->event(sender_filemissing, filename, 0);
             return;
         }
         if (g_sender->receive(data, (char*)&token, 1) < 1 || token == 0) {
-            g_sender->error("Connection closed by remote.\n");
+            g_sender->event(sender_connlost, NULL, 0);
             free(buffer);
             g_sender->close(data);
             return;
@@ -57,16 +57,16 @@ void sender_send_files(const char* addr, uint16_t port, int count, const char* f
         fseek(f, 0, SEEK_SET);
         uint64_t ss = htonll(size);
         g_sender->send(data, (const char*)&ss, 8);
-        g_sender->info("Sending %s...\n", filename);
+        g_sender->event(sender_sending, filename, 0);
         size_t total = 0;
         while (!feof(f)) {
             size_t r = fread(buffer, 1, BUF_SIZE, f);
             g_sender->send(data, buffer, r);
             total += r;
-            g_sender->info("\r  Progress:%10u/%u", (uint32_t)total, (uint32_t)size);
+            g_sender->progress(total, size);
         }
         fclose(f);
-        g_sender->info("\nSuccessfully sent %s.\n", filename);
+        g_sender->event(sender_sent, filename, 0);
     }
     free(buffer);
     g_sender->close(data);
