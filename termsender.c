@@ -11,6 +11,7 @@
 #include <winsock2.h>
 #else
 #include <errno.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
