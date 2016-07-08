@@ -30,6 +30,8 @@ void* connect_(const char* addr, uint16_t port) {
         rec_addr.sin_addr.s_addr = inet_addr(addr);
     if (connect(fd, (struct sockaddr *)&rec_addr, sizeof(rec_addr)))
         return NULL;
+    int nbuf = 32 * 1024;
+    setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *)&nbuf, sizeof(nbuf));
     return (void*)(uintptr_t)fd;
 }
 
