@@ -1,5 +1,3 @@
-#include "sender.h"
-
 #include "termsender.h"
 #include "sender.h"
 
