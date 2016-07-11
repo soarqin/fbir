@@ -27,6 +27,43 @@ void register_sender(sender_t* sender) {
     g_sender = sender;
 }
 
+#ifdef OLD_PROTOCOL
+void sender_send_files(const char* addr, uint16_t port, int count, const char* files[]) {
+    int i;
+    char* buffer;
+    buffer = (char*)malloc(BUF_SIZE);
+    for (i = 0; i < count; ++i) {
+        void* data = g_sender->connect(addr, port);
+        if (data == NULL) {
+            g_sender->event(sender_connfail, addr, port);
+            return;
+        }
+        const char* filename = files[i];
+        FILE* f = fopen(filename, "rb");
+        if (f == NULL) {
+            g_sender->event(sender_filemissing, filename, 0);
+            return;
+        }
+        fseek(f, 0, SEEK_END);
+        size_t size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        uint64_t ss = htonll(size);
+        g_sender->send(data, (const char*)&ss, 8);
+        g_sender->event(sender_sending, filename, 0);
+        size_t total = 0;
+        while (!feof(f)) {
+            size_t r = fread(buffer, 1, BUF_SIZE, f);
+            g_sender->send(data, buffer, r);
+            total += r;
+            g_sender->progress(total, size);
+        }
+        fclose(f);
+        g_sender->event(sender_sent, filename, 0);
+        g_sender->close(data);
+    }
+    free(buffer);
+}
+#else
 void sender_send_files(const char* addr, uint16_t port, int count, const char* files[]) {
     int i;
     char* buffer;
@@ -71,3 +108,4 @@ void sender_send_files(const char* addr, uint16_t port, int count, const char* f
     free(buffer);
     g_sender->close(data);
 }
+#endif
