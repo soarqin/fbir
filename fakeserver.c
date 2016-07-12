@@ -46,9 +46,6 @@ int main(int argc, char* argv[]) {
 
     signal(SIGABRT, onsig);
     signal(SIGINT, onsig);
-#ifndef WIN32
-    signal(SIGBREAK, onsig);
-#endif
 #ifdef WIN32
     {
         WSADATA wd;
@@ -61,12 +58,16 @@ int main(int argc, char* argv[]) {
     name.sin_addr.s_addr = htonl (INADDR_ANY);
     if (bind (sock, (const struct sockaddr *) &name, sizeof (name)) < 0) {
         fprintf(stderr, "Unable to bind\n");
+#ifdef WIN32
         WSACleanup();
+#endif
         return -1;
     }
     if (listen (sock, 16) < 0) {
         fprintf(stderr, "Unable to listen\n");
+#ifdef WIN32
         WSACleanup();
+#endif
         return -1;
     }
     running = 1;
