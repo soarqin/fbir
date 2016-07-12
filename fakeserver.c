@@ -80,22 +80,28 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "Unable to accept\n");
             break;
         }
+#ifndef OLD_PROTOCOL
         if (recv(client, (char*)&count, 4, 0) < 0) {
             if (running)
                 fprintf(stderr, "Failed to receive count\n");
             break;
         }
         count = htonl(count);
+#else
+        count = 1;
+#endif
         fprintf (stdout, "File count: %d\n", count);
         for (i = 0; i < count; ++i) {
             char buf[BUFSIZE];
-            char s = 1;
             uint64_t fsize, trans;
+#ifndef OLD_PROTOCOL
+            char s = 1;
             if (send(client, &s, 1, 0) < 0) {
                 if (running)
                     fprintf(stderr, "Failed to send sig\n");
                 goto end;
             }
+#endif
             if (recv(client, (char*)&fsize, 8, 0) < 0) {
                 if (running)
                     fprintf(stderr, "Failed to receive file size\n");
